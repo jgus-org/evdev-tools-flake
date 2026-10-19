@@ -4,12 +4,29 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     flake-utils.url = "github:numtide/flake-utils";
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      treefmt-nix,
+    }:
+    flake-utils.lib.eachSystem [ "x86_64-linux" ] (
+      system:
       let
         pkgs = import nixpkgs { inherit system; };
+
+        treefmtEval = treefmt-nix.lib.evalModule pkgs {
+          projectRootFile = "flake.nix";
+          programs.nixfmt.enable = true;
+          programs.clang-format.enable = true;
+        };
 
         evdev-tools = pkgs.stdenv.mkDerivation {
           pname = "evdev-tools";
@@ -17,7 +34,10 @@
           src = ./.;
 
           nativeBuildInputs = [ pkgs.pkg-config ];
-          buildInputs = [ pkgs.systemd pkgs.boost ];
+          buildInputs = [
+            pkgs.systemd
+            pkgs.boost
+          ];
           checkInputs = [ pkgs.gtest ];
 
           buildPhase = ''
@@ -61,5 +81,9 @@
           inherit evdev-tools;
           default = evdev-tools;
         };
-      });
+
+        formatter = treefmtEval.config.build.wrapper;
+        checks.formatting = treefmtEval.config.build.check self;
+      }
+    );
 }
