@@ -3,7 +3,10 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
-    flake-utils.url = "github:numtide/flake-utils";
+    flake-lib = {
+      url = "github:jgus-org/flake-lib/v1";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -14,10 +17,10 @@
     {
       self,
       nixpkgs,
-      flake-utils,
+      flake-lib,
       treefmt-nix,
     }:
-    flake-utils.lib.eachSystem [ "x86_64-linux" ] (
+    flake-lib.lib.eachDefaultLinuxSystem (
       system:
       let
         pkgs = import nixpkgs { inherit system; };
@@ -72,7 +75,7 @@
           meta = {
             description = "Couch-console input tools: the CEC-gated keyboard/pointer interposer, the evdev-bridge session holder, and the passive evdev-chords observer";
             mainProgram = "evdev-interposer";
-            platforms = [ "x86_64-linux" ];
+            platforms = flake-lib.lib.defaultLinuxSystems;
           };
         };
       in
