@@ -52,7 +52,7 @@ std::optional<std::uint16_t> cec_routing_target(const cec_msg& message);
 // The CEC device pair backing the gate: a monitor fd for bus traffic and an initiator/follower fd for transmits and directed messages. With claim_as() set, also owns the adapter's logical-address claim.
 class CecLink {
  public:
-  // Enables logical-address claiming (playback type, presenting this OSD name); call before open. Negotiation is honest: every (re)claim keeps whatever address the bus yields — other playback devices legitimately hold addresses, and the kernel's cec-claim-disarm patch (machine/k1) keeps our own stale ACK filter from bidding against us. A renegotiation that moves the address while the TV is showing us re-broadcasts ACTIVE_SOURCE from the new address, because the TV routes remote presses by the logical address it last saw claim.
+  // Enables logical-address claiming (playback type, presenting this OSD name); call before open. Negotiation is honest: every (re)claim keeps whatever address the bus yields — other playback devices legitimately hold addresses, and the kernel's cec-claim-disarm patch (machine/k1) keeps our own stale ACK filter from bidding against us.
   void claim_as(const std::string& osd_name) { claim_osd_ = osd_name; }
   void set_activate_on_claim(bool activate) { activate_on_claim_ = activate; }
   // Opens both fds and reads the runtime physical address into tv; with claiming enabled, adopts or submits the logical-address claim and puts the tx fd in follower mode.
@@ -71,6 +71,7 @@ class CecLink {
   void drain_tx(std::uint32_t epoll_events);
   // Solicits the TV's power status and the bus's active source, once; retried until the adapter has a logical address. The active-source solicitation can draw a stale claim from another source device and gate falsely — accepted: a pop gesture wakes and re-announces, so a false gate costs one pop, while skipping the solicitation would leave input live (blind) with the TV on another source.
   void query_state();
+  // Broadcasts ACTIVE_SOURCE naming our own address: the one CEC command that moves the TV's input. Announce only where k1 starts the transition (wake, bridge return, claim), never in reply to bus traffic — answering a routing message or another source's REQUEST_ACTIVE_SOURCE re-issues the switch that message just reported, and two playback devices answering each other hold the input at bus speed.
   bool announce_active_source(const TvState& tv);
   // Bus map built from observed REPORT_PHYSICAL_ADDR and other devices' ACTIVE_SOURCE traffic.
   void note_bus_address(std::uint8_t la, std::uint16_t pa);

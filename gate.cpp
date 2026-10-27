@@ -185,13 +185,10 @@ void CecLink::note_ioctl_failure() {
 }
 
 void CecLink::adopt(int la, const TvState& tv) {
-  bool moved = la_ >= 0 && la != la_;
   la_ = la;
   std::fprintf(stderr, "evdev-interposer: CEC logical address %d\n", la);
   if (!announced_ && activate_on_claim_)
     announced_ = announce_active_source(tv);
-  else if (moved && tv.is_active_source())
-    announce_active_source(tv);
   probe_audio();
 }
 
@@ -393,27 +390,14 @@ void CecLink::on_msg(const cec_msg& m, TvState& tv) {
       break;
     case CEC_MSG_SET_STREAM_PATH:
       if (initiator == CEC_LOG_ADDR_TV) {
-        auto target = cec_routing_target(m);
-        if (!target)
-          break;
-        tv.on_active(*target);
-        if (tv.is_active_source())
-          announce_active_source(tv);
+        if (auto target = cec_routing_target(m))
+          tv.on_active(*target);
       }
       break;
     case CEC_MSG_ROUTING_CHANGE:
-    case CEC_MSG_ROUTING_INFORMATION: {
-      auto target = cec_routing_target(m);
-      if (target) {
+    case CEC_MSG_ROUTING_INFORMATION:
+      if (auto target = cec_routing_target(m))
         tv.on_active(*target);
-        if (tv.is_active_source())
-          announce_active_source(tv);
-      }
-      break;
-    }
-    case CEC_MSG_REQUEST_ACTIVE_SOURCE:  // re-assert our claim (skipping our own startup solicitation) so the TV keeps routing remote presses here
-      if (!is_own_logical_address(initiator) && tv.is_active_source())
-        announce_active_source(tv);
       break;
     case CEC_MSG_ACTIVE_SOURCE: {
       auto target = cec_routing_target(m);
