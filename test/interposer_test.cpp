@@ -221,7 +221,7 @@ TEST(TvState, OtherActiveSourceGates) {
   EXPECT_FALSE(tv.is_gated());
 }
 
-// Claim re-assertion (SET_STREAM_PATH confirm, REQUEST_ACTIVE_SOURCE answer) keys off this: only when the bus evidence says the active source is us.
+// Bridge completion is the only consumer: the bridge ends once bus evidence says the active source is us again. Bus evidence on its own never announces.
 TEST(TvState, IsActiveSourceRequiresOwnAddressMatch) {
   TvState tv;
   EXPECT_FALSE(tv.is_active_source());
