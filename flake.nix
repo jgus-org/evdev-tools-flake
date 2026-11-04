@@ -2,8 +2,11 @@
   description = "Couch-console input tools. evdev-interposer: virtual keyboard/pointer devices over grabbed evdev devices, input gated on the TV's CEC state, CEC logical-address claiming, and a pop-one-level command from a key or pad chord. evdev-bridge: holds an interposer bridge session that switches the TV to another input and forwards local input to it over CEC. evdev-chords: passive chord observer firing configured commands, sharing the interposer's chord/device libraries.";
 
   inputs = {
-    flake-lib.url = "github:jgus-org/flake-lib/v1";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    flake-lib = {
+      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:jgus-org/flake-lib/v1";
+    };
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
 
   outputs =
